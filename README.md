@@ -14,6 +14,8 @@ Project of IoT for monitoring Plants
 
 # Simulator
 
+## Controled simulation
+
 To run the simulator it is necessary to first create a account on [KonkerLab](), create a device and configure the **device username and password** inside the [simulate.py](code/simulate/simulate.py) file
 
 then run the simulate code which will simuate a normal, high or low measures of temperature, humidity and soil humidity. The script will simulate 100 measurements.
@@ -35,6 +37,16 @@ and 2 for low simulation, for example a simulation fo low soil humidity and lumi
 ```
 python code/simulate/simulate.py 0 0 2 2
 ```
+
+## Generic simulation
+
+There is also a generic simulation, which can be done as
+
+```
+python code/simulate/simulate_from_np.py data/simul_data.npy
+```
+
+where simul_data.npy should be a np array with shape (N,4), with N samples and the columns are temperature, humidity, soil hum. and luminosity
 
 
 # Disease detection

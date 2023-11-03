@@ -1,21 +1,4 @@
 '''
-
-Code that simulates a plant measure for konkerlabs
-
-configure username and password
-
-
-usage of normal case:
-
-simulage.py 0 0 0 0 
-
-
-to simulate a abnormal case use 1 or 2:
-
-simulate.py 0 0 0 1
-
-this example will simulate a high abnormal case for luminosity
-
 '''
 
 
@@ -64,29 +47,14 @@ def connect_mqtt():
     return client
 
 
+def publish_measures(client, data_array):
 
-def normal_to_int(normal):
-    new = []
-
-    for n in normal:
-        new.append(int(n))
-
-    return new
-
-
-def publish_measures(client, normal):
-    t1,h1,s1,l1 = gen_complete(normal=normal)
-
-    msg_count=0
-
-    msg_len = len(t1)
-
-    while True:
+    for t,h,s,l in data_array:
         time.sleep(1)
 
         ##############################################################################
         topic = f'{parent_topic}/{inner_topics[0]}'
-        MQTT_MSG=json.dumps({"metric":  "Celsius","value": t1[msg_count]})
+        MQTT_MSG=json.dumps({"metric":  "Celsius","value": float(t)})
         result = client.publish(topic, MQTT_MSG)
         # result: [0, 1]
         status_t = result[0]
@@ -95,7 +63,7 @@ def publish_measures(client, normal):
 
         ##############################################################################
         topic = f'{parent_topic}/{inner_topics[1]}'
-        MQTT_MSG=json.dumps({"metric":  "Percentage","value": h1[msg_count]})
+        MQTT_MSG=json.dumps({"metric":  "Percentage","value": float(h)})
         result = client.publish(topic, MQTT_MSG)
         # result: [0, 1]
         status_h = result[0]
@@ -105,7 +73,7 @@ def publish_measures(client, normal):
 
         ##############################################################################
         topic = f'{parent_topic}/{inner_topics[2]}'
-        MQTT_MSG=json.dumps({"metric":  "Percentage","value": s1[msg_count]})
+        MQTT_MSG=json.dumps({"metric":  "Percentage","value": float(s)})
         result = client.publish(topic, MQTT_MSG)
         # result: [0, 1]
         status_s = result[0]
@@ -114,7 +82,7 @@ def publish_measures(client, normal):
 
         ##############################################################################
         topic = f'{parent_topic}/{inner_topics[3]}'
-        MQTT_MSG=json.dumps({"metric":  "Index","value": l1[msg_count]})
+        MQTT_MSG=json.dumps({"metric":  "Index","value": float(l)})
         result = client.publish(topic, MQTT_MSG)
         # result: [0, 1]
         status_l = result[0]
@@ -123,26 +91,22 @@ def publish_measures(client, normal):
         
 
 
-        msg_count += 1
-        if msg_count >= msg_len-1:
-            break
-
-
-def run(normal):
+def run(data_path):
+    data = np.load(data_path)
+    if data.shape[1]!=4:
+        print("error! data should have 4 columns")
+        exit()
     client = connect_mqtt()
     client.loop_start()
     # publish(client)
-    publish_measures(client, normal_to_int(normal))
+    publish_measures(client, data)
     client.loop_stop()
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 5:
-        print("Usage simulate.py [1] [2] [3] [4]")
-        print("[1] - 0 for normal temperature, 1 for high, 2 for low")
-        print("[2] - 0 for normal humidity, 1 for high, 2 for low")
-        print("[3] - 0 for normal soil humidity, 1 for high, 2 for low")
-        print("[4] - 0 for normal luminosity, 1 for high, 2 for low")
+    if len(sys.argv) != 2:
+        print("Usage simulate.py <data.npy>")
+        print("<data.npy> is a Nx4 array, with the columns being temperature, hum., soil hum. and luminosity")
         exit()
     
-    run(sys.argv[1:])
+    run(sys.argv[1])
