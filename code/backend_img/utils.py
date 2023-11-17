@@ -70,3 +70,61 @@ class ImgUtils():
         pred = pred.argmax(1).detach().numpy()[0]
 
         return pred, self.p_class[int(pred)]
+
+
+    def predictCAMImage(self, img):
+        image = torch.tensor(img, dtype=torch.float)
+        image = torch.unsqueeze(torch.permute(image, (2,1,0)),0)
+
+        
+        new_i = self.tr[0](image)
+        new_i = self.tr[1](new_i)
+
+        print(img.shape, image.shape, new_i.shape)
+
+        pred = self.net(new_i)
+        
+        pred_i = pred.argmax(1).detach().numpy()[0]
+
+        # get the gradient of the output with respect to the parameters of the model
+        pred[:,pred_i].backward()
+
+        # pull the gradients out of the model
+        gradients = self.net.get_activations_gradient()
+
+        # pool the gradients across the channels
+        pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
+
+        # get the activations of the last convolutional layer
+        activations = self.net.get_activations(new_i).detach()
+
+        # weight the channels by corresponding gradients
+        for i in range(64):
+            activations[:, i, :, :] *= pooled_gradients[i]
+            
+        # average the channels of the activations
+        heatmap = torch.mean(activations, dim=1).squeeze()
+
+        # relu on top of the heatmap
+        # expression (2) in https://arxiv.org/pdf/1610.02391.pdf
+        heatmap = np.maximum(heatmap, 0)
+
+        # normalize the heatmap
+        heatmap /= torch.max(heatmap)
+
+
+        heatmap2 = heatmap.detach().numpy()
+
+        heatmap2 = cv2.resize(heatmap2, (img.shape[1], img.shape[0]))
+        heatmap2 = np.uint8(255 * heatmap2)
+        heatmap2 = cv2.applyColorMap(heatmap2, cv2.COLORMAP_JET)
+        heatmap2 = cv2.cvtColor(heatmap2, cv2.COLOR_BGR2RGB)
+
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        superimposed_img = heatmap2 * 0.1 + img * .9
+        superimposed_img = superimposed_img.astype(int)
+
+        cv2.imwrite('./map.jpg', superimposed_img)
+
+        return pred_i, self.p_class[int(pred_i)], superimposed_img, heatmap2

@@ -1,5 +1,6 @@
 from torch import nn
 import torch
+import torch as th
 
 import torch.nn.functional as F
 
@@ -30,12 +31,17 @@ class Classifier(nn.Module):
 
         if freeze_bn:
             self.freeze_bn()
+            
+        # placeholder for the gradients
+        self.gradients = None
 
     def forward(self, x):
 
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
+        
+        h = x.register_hook(self.activations_hook)
 
         x = torch.flatten(x, 1)
 
@@ -60,3 +66,18 @@ class Classifier(nn.Module):
         for module in self.modules():
             if isinstance(module, nn.BatchNorm2d):
                 module.eval()
+                
+    # hook for the gradients of the activations
+    def activations_hook(self, grad):
+        self.gradients = grad
+        
+    # method for the gradient extraction
+    def get_activations_gradient(self):
+        return self.gradients
+    
+    # method for the activation exctraction
+    def get_activations(self, x):
+        ret = self.conv1(x)
+        ret = self.conv2(ret)
+        ret = self.conv3(ret)
+        return ret

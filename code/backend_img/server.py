@@ -36,37 +36,46 @@ class ClassifyHandler(RequestHandler):
 
         print(pred_v, pred_c)
 
-        '''
-        if(visitorEntry == 'true'):
-            img = ImgUtils.gammaCorr(img, gamma=0.7)
-
-        cropped_face = ImgUtils.biggestFace(img)
-
-        if(DEBUG):
-            cv2.imshow("crop Image", img)
-            cv2.waitKey(500)
-            cv2.destroyAllWindows()
-
-        hasFace = False
-        ret = None
-        if not(cropped_face is None):
-            hasFace = True
-            crop_rgb = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2RGB)
-            outImage = cv2.imencode('.png', crop_rgb)[1]
-            ret = "data:image/png;base64," + \
-                base64.b64encode(outImage).decode('utf-8')
-
-        self.write({"image": ret, "hasFace": hasFace})
-        '''
         self.write({"pred_v" : f'{pred_v}', "pred_c": f'{pred_c}'})
 
 
+# classify an image
+# payload: {"image": binary_image}
+# example {"image": b'\x89PNG\r\n....}
+class GradCAMHandler(RequestHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST')
+
+    def post(self):
+
+        print("[POST]  /gradcam")
+        visitorEntry = self.get_body_argument('visitorEntry', default='false')
+
+        imgReq = self.request.files['image'][0]['body']
+
+        img = imut.decodeImg(imgReq)
+
+        #classify an image
+        pred_v, pred_c, camimg, cam = imut.predictCAMImage(img)
+
+        outi = cv2.imencode('.png', camimg)[1]
+        outcami = cv2.imencode('.png', cam)[1]
+
+        ret1 = "data:image/png;base64," + \
+                base64.b64encode(outi).decode('utf-8')
+
+        ret2 = "data:image/png;base64," + \
+                base64.b64encode(outcami).decode('utf-8')
+
+        self.write({"pred_v" : f'{pred_v}', "pred_c": f'{pred_c}', 'sup_img': ret1, 'cam_img': ret2})
 
 
 
 def make_app():
     print("Plant, running on port", PORT)
-    urls = [("/plant/classify", ClassifyHandler)]
+    urls = [("/plant/classify", ClassifyHandler), ("/plant/gradcam", GradCAMHandler)]
     return Application(urls)
 
 
