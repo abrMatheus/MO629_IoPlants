@@ -86,3 +86,12 @@ the system will return the image class number and name:
 
 
 TODO: implement the gradCAM method, which will also classify the plant disease but also return the heatmap image.
+
+
+# Front end
+The frontend requires a python 3.9
+
+```
+cd code/view
+bokeh serve app.py
+```

@@ -14,13 +14,17 @@ import numpy as np
 
 from konker import fetch_connection_konker, get_data_from_channel
 
-
+MAX_TEMP=35
+MIN_TEP=10
+MIN_HUM=70
+MIN_SOIL=50
+MAX_LUM=100
 
 fetch_connection_konker()
 
 im = Image.open('../../data/0001_0007.png') # just replace any image that you want here
 imarray = np.array(im.convert("RGBA"))
-gradcam = Image.open('../../data/0001_0007.png') # just replace any image that you want here
+gradcam = Image.open('../../data/gradcam.jpg') # just replace any image that you want here
 gradarray = np.array(gradcam.convert("RGBA"))
 
 
