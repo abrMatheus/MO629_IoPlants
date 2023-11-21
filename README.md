@@ -3,6 +3,18 @@
 Project of IoT for monitoring Plants
 
 
+
+# Installation / Set up environment
+
+```
+conda env create -f environment.yml
+conda activate iot_plant
+pip3 install torch torchvision --index- url https://download.pytorch.org/whl/cpu
+```
+
+Above, we install PyTorch version 2.0 with CPU. 
+
+
 # Organization
 
 ```
@@ -74,3 +86,12 @@ the system will return the image class number and name:
 
 
 TODO: implement the gradCAM method, which will also classify the plant disease but also return the heatmap image.
+
+
+# Front end
+The frontend requires a python 3.9
+
+```
+cd code/view
+bokeh serve app.py
+```

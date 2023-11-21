@@ -9,7 +9,7 @@ import torch as th
 import torch
 
 from torchvision import transforms
-import torchio as tio
+# import torchio as tio
 
 from models import Classifier
 
@@ -122,7 +122,7 @@ class ImgUtils():
 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        superimposed_img = heatmap2 * 0.1 + img * .9
+        superimposed_img = heatmap2 * 0.4 + img * .6
         superimposed_img = superimposed_img.astype(int)
 
         cv2.imwrite('./map.jpg', superimposed_img)
