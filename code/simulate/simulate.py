@@ -32,8 +32,8 @@ from paho.mqtt import client as mqtt_client
 
 
 #TODO: configure username, password of a plant
-username = ''
-password = ''
+username = 'jca8tlipsrbi'
+password = 'RjjA9rqFVx1Y'
 
 if username=='' or password=='':
     print("ERROR: Please configure username and password")

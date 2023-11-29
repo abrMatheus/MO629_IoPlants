@@ -19,15 +19,18 @@ MIN_TEP=10
 MIN_HUM=70
 MIN_SOIL=50
 MAX_LUM=100
+ONLINE=False # set to True if WiFi is on
 
-fetch_connection_konker()
+
+if ONLINE:
+    fetch_connection_konker()
 
 im = Image.open('../../data/0001_0007.png') # just replace any image that you want here
 imarray = np.array(im.convert("RGBA"))
 gradcam = Image.open('../../data/gradcam.jpg') # just replace any image that you want here
 gradarray = np.array(gradcam.convert("RGBA"))
 
-
+dummy_data = np.load("../../data/leitura.npy", mmap_mode='r')
 
 data_source = ColumnDataSource(data = {"Temperature": [],
                                        "Humidity": [], 
@@ -52,7 +55,7 @@ fig = figure(x_axis_type="datetime",
 l0 = fig.line(x="DateTime", y="Temperature", legend_label="Temperature", line_color="red", line_width=1.0, source=data_source,)
 l1 = fig.line(x="DateTime", y="Humidity",legend_label="Humidity", line_color="blue", line_width=1.0, source=data_source,)
 l2 = fig.line(x="DateTime", y="SoilHumidity",legend_label="Soil Humidity", line_color="green", line_width=1.0, source=data_source,)
-l3 = fig.line(x="DateTime", y="Luminosity",legend_label="Luminosity", line_color="yellow", line_width=1.0, source=data_source,)
+l3 = fig.line(x="DateTime", y="Luminosity",legend_label="Luminosity", line_color="orange", line_width=1.0, source=data_source,)
 
 
 
@@ -147,6 +150,7 @@ p.text(0, 0, text='classification_information', text_color='text_color',
        source=classification_report_source)
 
 ## Define Callbacks to update the figures in real time 
+
 def update_plant_condition_live_charts():
     global data_source
     
@@ -157,6 +161,7 @@ def update_plant_condition_live_charts():
     for i, channel in enumerate(channel_list):
         resp = get_data_from_channel(channel=channel_list[i], 
                                                 device_name = device_name)
+        print(resp)
         resp_json = resp['result']
         df = json_normalize(resp_json).set_index('timestamp')
 
@@ -176,10 +181,44 @@ def update_plant_condition_live_charts():
                "DateTime": [datetime.now(),]}
     data_source.stream(new_row)
 
-update_period_milliseconds = 1000 # 1minute = 6000 ms
-curdoc().add_periodic_callback(update_plant_condition_live_charts,
-                                update_period_milliseconds)
 
+j = 1
+
+def dummy_update_plant_condition_live_charts():
+    global j
+    global dummy_data
+
+    data = []
+        
+    data.append(dummy_data[j])
+
+#    data = np.clip(data,np.min(data),np.max(data))
+
+
+    print("[INFO] Current data:", data)
+
+    
+    new_row = {"Temperature":  [data[0][0]],
+               "Humidity":  [data[0][1]],
+               "SoilHumidity":  [data[0][2]],
+               "Luminosity":  [data[0][3]], 
+               "DateTime": [datetime.now(),]}
+    
+
+  
+    j = j + 1
+    
+    data_source.stream(new_row)
+
+
+update_period_milliseconds = 1000 # 1minute = 6000 ms
+
+if ONLINE:
+    curdoc().add_periodic_callback(update_plant_condition_live_charts,
+                                    update_period_milliseconds)
+else:
+    curdoc().add_periodic_callback(dummy_update_plant_condition_live_charts,
+                                    update_period_milliseconds)
 
 #https://stackoverflow.com/questions/59673478/bokeh-on-click-function-changes-text-only-after-entire-function-has-completed
 #https://stackoverflow.com/questions/34646270/how-do-i-work-with-images-in-bokeh-python
@@ -189,10 +228,10 @@ curdoc().add_periodic_callback(update_plant_condition_live_charts,
 
 
 
-#from bokeh.models import FileInput
+from bokeh.models import FileInput
 
 # file input buuton
-#file_input = FileInput()
+file_input = FileInput()
 
 # button
 from bokeh.models import Button
@@ -220,8 +259,8 @@ plotted_gradcam = gradcam_fig.image_rgba(image=[gradarray.view("uint32").reshape
 
 # curdoc().theme = "caliber"
 # curdoc().theme = "dark_minimal"
-# curdoc().theme = "light_minimal"
-curdoc().theme = "night_sky"
+curdoc().theme = "light_minimal"
+#curdoc().theme = "night_sky"
 # curdoc().theme = "contrast"
 
 # hide some component of toolbar on figures
@@ -237,8 +276,8 @@ image_layout = row([img_fig, gradcam_fig, p],
 layout = layout(
     [
         [fig, tabs_component],
-        [button, 
-         #file_input
+        [file_input,button 
+         
          ],
          [image_layout]
        
